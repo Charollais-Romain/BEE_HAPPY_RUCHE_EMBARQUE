@@ -1,0 +1,18 @@
+﻿  Validation des sources
+  Copie des sources à distance vers '192.168.1.114'
+  Validation de l'architecture
+  Validation de l'architecture
+C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Application Type\Linux\1.0\Linux.targets(201,5): warning : L'architecture de projet actuelle 'ARM' est incompatible avec l'architecture du système distant 'ARM64' ('aarch64'). Remplacez l'architecture de projet par 'ARM64' dans le Gestionnaire de configuration. Si vous effectuez une compilation croisée, vous pouvez ignorer cet avertissement.
+  Démarrage de la build distante
+  Compilation des sources :
+  accel_gyro.cpp
+  communication.cpp
+  detection.cpp
+  gps.cpp
+  main.cpp
+  ruche_temoin.cpp
+  temperature.cpp
+  trame.cpp
+  Liaison des objets
+/usr/bin/ld : error : cannot find -lwiringPi: No such file or directory
+collect2 : error : ld returned 1 exit status

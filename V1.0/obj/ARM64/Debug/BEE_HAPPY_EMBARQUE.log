@@ -1,0 +1,16 @@
+﻿  Validation des sources
+  Copie des sources à distance vers '192.168.1.114'
+  Validation de l'architecture
+  Validation de l'architecture
+  Démarrage de la build distante
+  Compilation des sources :
+  accel_gyro.cpp
+  communication.cpp
+  detection.cpp
+  gps.cpp
+  main.cpp
+  ruche_temoin.cpp
+  temperature.cpp
+  trame.cpp
+  Liaison des objets
+  BEE_HAPPY_EMBARQUE.vcxproj -> C:\Users\romai\Documents\Visual Studio 2022\proj\BEE_HAPPY_EMBARQUE\bin\ARM64\Debug\BEE_HAPPY_EMBARQUE.out

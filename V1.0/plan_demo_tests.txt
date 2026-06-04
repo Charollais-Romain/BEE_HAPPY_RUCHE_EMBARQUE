@@ -1,0 +1,173 @@
+================================================================================
+  RUCHE TÉMOIN — PLAN TESTS & DÉMO (40 MIN)
+  Projet : testt | IDs : RH001 / R003 | Apiculteur : +33659599042
+================================================================================
+
+STRUCTURE GLOBALE (40 MIN)
+--------------------------
+  1. Mise en route ........................ 5 min
+  2. Mesures en direct ...................... 8 min
+  3. Trames & protocole SMS ................. 7 min
+  4. Scénarios d'alerte ................... 12 min
+  5. SMS bidirectionnel ................... 6 min
+  6. Buffer / questions ................... 2 min
+
+
+================================================================================
+  1. MISE EN ROUTE (5 MIN)
+================================================================================
+
+À FAIRE :
+  - Lancer le binaire testt sur le Raspberry Pi
+  - Vérifier les logs de démarrage (init LSM6DS3, GPIO température)
+  - Montrer la boucle : affichage toutes les 500 ms
+    Format console : RUCHE T=xx.xC GPS=...
+
+MESSAGE CLÉ JURY :
+  "L'orchestration est centralisée dans RucheTemoin : capteurs, détection,
+   encodage des trames, envoi GSM."
+
+PIÈGE :
+  - Si accel/gyro ne s'initialise pas → demarrer() échoue → voir PLAN B (fin)
+
+
+================================================================================
+  2. DÉMO CAPTEURS (8 MIN)
+================================================================================
+
+TEMPÉRATURE (SHT3x, /sys/class/hwmon) :
+  - Capteur détecté automatiquement (nom contenant "sht3")
+  - Lecture : temp1_input (millièmes de °C)
+
+DÉMO : montrer la température en console (évolue avec l'ambiance).
+
+ACCEL / GYRO (LSM6DS3, I2C /dev/i2c-1) :
+  - Ruche immobile → norme accel stable (~1 g)
+  - Secouer / taper → variation (prépare alerte choc)
+  - Incliner fortement → accelZ proche de 0 → alerte basculement
+
+
+================================================================================
+  3. TRAMES & PROTOCOLE SMS (7 MIN)
+================================================================================
+
+TRAME PÉRIODIQUE (envoi toutes les 15 min ou sur demande SMS) :
+  +33659599042;0.000;2.352200;48.856600;22.5;OK
+
+  Champs : téléphone ; masse kg ; longitude ; latitude ; T°C ; état
+
+TRAME ALERTE :
+  RH001;R003;2026-05-25T14:31:00;ALERTE_CHOC
+
+  Types possibles (codes A2, A3, A4) :
+    A3 — choc
+    A2 — basculement
+    A4 — température hors seuils
+
+ASTUCE DÉMO (ne pas attendre 15 min) :
+  - Envoyer SMS "ETAT" ou "INFO" ou "MESURE" → renvoi immédiat des mesures
+  - OU réduire intervalleEnvoiMin_ à 1 dans ruche_temoin.cpp avant la soutenance
+
+
+================================================================================
+  4. SCÉNARIOS D'ALERTE (12 MIN)
+================================================================================
+
+| Alerte              | Comment déclencher              | Seuil code        |
+|---------------------|---------------------------------|-------------------|
+| ALERTE_CHOC         | Coup sec sur ruche / table      | delta accel ≥ 0.70 g |
+| ALERTE_BASCULEMENT  | Ruche couchée sur le côté       | |accelZ| < 0.50 g |
+| ALERTE_TEMPERATURE  | Chauffer / refroidir le capteur DHT11 | < 5°C ou > 40°C (A4) |
+
+ENCHAÎNEMENT RECOMMANDÉ :
+  1. État normal → pas d'alerte
+  2. Choc (frappe) → log "RUCHE trame (A3): ..." + SMS
+  3. Température extrême → A4
+  4. Inclinaison forte → A2
+
+À MONTRER : console SSH + téléphone apiculteur (SMS reçu)
+
+
+================================================================================
+  5. SMS BIDIRECTIONNEL (6 MIN)
+================================================================================
+
+MODEM : /dev/ttyUSB0, commandes AT (AT+CMGF=1, AT+CMGS)
+
+DEMANDE APICULTEUR :
+  Envoyer un SMS contenant : ETAT  ou  INFO  ou  MESURE
+  (minuscules acceptées : etat, info, mesure)
+  → Le système renvoie immédiatement la trame périodique avec les mesures
+
+SCÉNARIO JURY :
+  "On simule l'apiculteur au champ qui demande l'état de sa ruche."
+  → SMS ETAT → trame reçue sur le téléphone
+
+ATTENTION TIMING :
+  Après envoi SMS, le modem attend ~12 secondes (délai normal AT).
+  Préparer une phrase pendant l'attente : "Le modem GSM traite l'envoi."
+
+
+================================================================================
+  6. GRILLE DE TESTS (vocabulaire jury)
+================================================================================
+
+  T1 – Boot          : RUCHE demarrage RH001 / R003, pas d'erreur I2C
+  T2 – Capteurs      : Lignes T=… GPS=… qui évoluent
+  T3 – Trame périod. : Format ; correct, horodatage cohérent
+  T4 – Choc          : ALERTE_CHOC + SMS
+  T5 – Température   : ALERTE_TEMPERATURE via seuils
+  T6 – Commande SMS  : ETAT → renvoi mesures
+  T7 – Retour normal : Valeurs OK → plus d'alertes intempestives
+
+
+================================================================================
+  LIEN DIAPOS (20 MIN) ↔ DÉMO (40 MIN)
+================================================================================
+
+  Architecture modulaire     → Classes capteurs + RucheTemoin
+  Choix SMS (pas 4G)         → Modem AT + SMS sur téléphone
+  Détection d'événements     → 3 scénarios d'alerte (A2, A3, A4)
+  Protocole de données       → Décoder une trame à la main devant le jury
+
+
+================================================================================
+  PLANS B (si problème live)
+================================================================================
+
+  1. GSM capricieux     → Montrer printf des trames + capture SMS veille
+  2. Accel HS           → Alertes température + trames SMS
+  3. 15 min trop long   → SMS ETAT ou intervalleEnvoiMin_ = 1
+  4. Double écran       → SSH console Pi + téléphone SMS
+
+
+================================================================================
+  CHECKLIST LA VEILLE
+================================================================================
+
+  [ ] Carte SIM créditée, antenne branchée, /dev/ttyUSB0 présent
+  [ ] Capteur SHT3x visible : ls /sys/class/hwmon/*/name
+  [ ] Téléphone chargé, numéro apiculteur à jour dans le code
+  [ ] intervalleEnvoiMin_ réduit pour démo (optionnel)
+  [ ] 1–2 SMS de test déjà reçus (preuve que ça marche)
+  [ ] Binaire testt compilé et déployé sur le Pi
+  [ ] Câble SSH / écran pour voir les logs en direct
+
+
+================================================================================
+  SCRIPT MINUTE PAR MINUTE (option rapide)
+================================================================================
+
+  00:00  Lancer testt, montrer boot OK
+  00:05  Console : mesures live qui défilent
+  00:10  Montrer température live
+  00:15  Expliquer format trame périodique (écran ou papier)
+  00:18  SMS "ETAT" → recevoir trame sur téléphone
+  00:25  Démo choc (frappe) → ALERTE_CHOC
+  00:28  Chauffer capteur → A4 température
+  00:32  Incliner ruche → A2 basculement
+  00:40  Synthèse + questions
+
+================================================================================
+  FIN DU DOCUMENT
+================================================================================
